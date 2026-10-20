@@ -26,14 +26,18 @@ But I don't have time for that. I'm not a person who searches for thousands of o
 ### `github_traffic.py`
 
 - fetches views, visitors, clones, referrers and the most visited files for all your own repos
-- saves the history as CSV, because GitHub itself only keeps the last 14 days
-- creates an Excel report with four sheets: Übersicht (overview), Verlauf (history), Herkunft (referrers), Dateien (files)
+- saves the history of views, clones, referrers and files as CSV, because GitHub itself only keeps the last 14 days
+- creates an Excel report with four sheets: Übersicht (overview), Verlauf (daily views and clones), Herkunft (referrers), Dateien (files)
 
 ### `github_unfollow.py`
 
 - compares who follows you and who you follow
 - shows who doesn't follow back
+- saves your follower list on every run and shows who has newly followed or unfollowed you since the last run
+- records these changes with the date in `follower_aenderungen.csv`
 - runs as a dry run by default, it only unfollows with `--apply`
+
+**Important:** "Doesn't follow back" does not mean "unfollowed me". The script can only detect unfollowers from the second run on, because it needs a saved list to compare with.
 
 **Note:** Organizations (for example `jupyter` or `docker`) can't follow anyone. That's why they always show up in the list. So check the list before using `--apply`.
 

@@ -24,14 +24,18 @@ Aber dafür habe ich keine Zeit. Ich bin kein Mensch, der tausende andere Mensch
 ### `github_traffic.py`
 
 - holt für alle eigenen Repos Aufrufe, Besucher, Clones, Herkunftsseiten und die meistbesuchten Dateien
-- speichert den Verlauf als CSV, weil GitHub selbst nur die letzten 14 Tage speichert
-- erstellt einen Excel-Bericht mit vier Blättern: Übersicht, Verlauf, Herkunft, Dateien
+- speichert den Verlauf von Aufrufen, Clones, Herkunftsseiten und Dateien als CSV, weil GitHub selbst nur die letzten 14 Tage speichert
+- erstellt einen Excel-Bericht mit vier Blättern: Übersicht, Verlauf (Aufrufe und Clones pro Tag), Herkunft, Dateien
 
 ### `github_unfollow.py`
 
 - vergleicht, wer mir folgt und wem ich folge
 - zeigt, wer nicht zurückfolgt
+- speichert bei jedem Lauf den Follower-Stand und zeigt, wer seit dem letzten Lauf neu dazugekommen ist oder dich entfolgt hat
+- hält diese Änderungen mit Datum in `follower_aenderungen.csv` fest
 - startet standardmäßig als Probelauf, entfolgt wird nur mit `--apply`
+
+**Wichtig:** „Folgt nicht zurück“ heißt nicht „hat mich entfolgt“. Entfolger erkennt das Skript erst ab dem zweiten Lauf, weil es dafür einen gespeicherten Stand zum Vergleich braucht.
 
 **Hinweis:** Organisationen (zum Beispiel `jupyter` oder `docker`) können niemandem folgen. Sie stehen deshalb immer in der Liste. Die Liste also vor `--apply` prüfen.
 

@@ -1,5 +1,7 @@
 """
 GitHub: Wer folgt mir nicht zurück? -> entfolgen
+Speichert außerdem bei jedem Lauf den Follower-Stand und zeigt,
+wer seit dem letzten Lauf neu dazugekommen ist oder mich entfolgt hat.
 
 Nutzung:
     export GITHUB_TOKEN="dein_token"
@@ -12,13 +14,21 @@ Token:
     - Fine-grained: Account permission "Followers" = Read and write
 """
 
+import csv
+import json
 import os
 import sys
 import time
+from datetime import date
+from pathlib import Path
+
 import requests
 
 USERNAME = "Amirhouschang"
 API = "https://api.github.com"
+OUT_DIR = Path(__file__).parent
+STAND_DATEI = OUT_DIR / "follower_stand.json"
+AENDERUNGEN_DATEI = OUT_DIR / "follower_aenderungen.csv"
 
 token = os.environ.get("GITHUB_TOKEN")
 if not token:
@@ -50,6 +60,39 @@ def get_all(endpoint):
     return set(users)
 
 
+def vergleiche_mit_letztem_stand(followers):
+    """Follower mit dem letzten gespeicherten Stand vergleichen und neuen Stand speichern."""
+    if not STAND_DATEI.exists():
+        print("Erster Lauf: Follower-Stand gespeichert. "
+              "Ab dem nächsten Lauf werden Änderungen angezeigt.\n")
+    else:
+        alt = set(json.loads(STAND_DATEI.read_text(encoding="utf-8")))
+        neu = sorted(followers - alt, key=str.lower)
+        weg = sorted(alt - followers, key=str.lower)
+
+        print(f"Neue Follower seit letztem Lauf: {len(neu)}")
+        for user in neu:
+            print(f"  + {user}")
+        print(f"Entfolgt seit letztem Lauf: {len(weg)}")
+        for user in weg:
+            print(f"  - {user}")
+        print()
+
+        # Änderungen dauerhaft in CSV festhalten
+        if neu or weg:
+            datei_neu = not AENDERUNGEN_DATEI.exists()
+            heute = date.today().isoformat()
+            with AENDERUNGEN_DATEI.open("a", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                if datei_neu:
+                    writer.writerow(["datum", "user", "aenderung"])
+                writer.writerows([heute, user, "neu"] for user in neu)
+                writer.writerows([heute, user, "entfolgt"] for user in weg)
+
+    STAND_DATEI.write_text(json.dumps(sorted(followers, key=str.lower), indent=2),
+                           encoding="utf-8")
+
+
 def main():
     apply = "--apply" in sys.argv
 
@@ -58,7 +101,10 @@ def main():
     not_following_back = sorted(following - followers, key=str.lower)
 
     print(f"Follower:  {len(followers)}")
-    print(f"Ich folge: {len(following)}")
+    print(f"Ich folge: {len(following)}\n")
+
+    vergleiche_mit_letztem_stand(followers)
+
     print(f"Folgen nicht zurück: {len(not_following_back)}\n")
 
     for user in not_following_back:

@@ -89,7 +89,7 @@ def style(ws, highlight_col=None):
 
 
 # ── 3. Daten abrufen ──────────────────────────────────────────
-daily, referrers, paths, summary = [], [], [], []
+daily, clone_daily, referrers, paths, summary = [], [], [], [], []
 
 for repo in get_repos():
     name, full = repo["name"], repo["full_name"]
@@ -105,6 +105,9 @@ for repo in get_repos():
     for v in views.get("views", []):
         daily.append({"repo": name, "date": v["timestamp"][:10],
                       "views": v["count"], "unique_visitors": v["uniques"]})
+    for c in clones.get("clones", []):
+        clone_daily.append({"repo": name, "date": c["timestamp"][:10],
+                            "clones": c["count"], "unique_cloners": c["uniques"]})
     for r in refs:
         referrers.append({"repo": name, "snapshot": TODAY, "referrer": r["referrer"],
                           "views": r["count"], "unique": r["uniques"]})
@@ -122,9 +125,15 @@ for repo in get_repos():
     })
 
 
+if not summary:
+    sys.exit("Keine Traffic-Daten: keine eigenen Repos gefunden oder alle übersprungen.")
+
+
 # ── 4. Verlauf als CSV speichern ──────────────────────────────
 if daily:
     save_history(pd.DataFrame(daily), "views_daily.csv", ["repo", "date"])
+if clone_daily:
+    save_history(pd.DataFrame(clone_daily), "clones_daily.csv", ["repo", "date"])
 if referrers:
     save_history(pd.DataFrame(referrers), "referrers.csv", ["repo", "snapshot", "referrer"])
 if paths:
@@ -137,8 +146,13 @@ uebersicht.columns = ["Projekt", "Aufrufe", "Besucher", "Clones",
                       "Stars", "Forks", "Hauptquelle"]
 
 verlauf = load("views_daily.csv", ["repo", "date", "views", "unique_visitors"])
-verlauf = verlauf[verlauf["views"] > 0].sort_values(["date", "repo"], ascending=[False, True])
-verlauf.columns = ["Projekt", "Datum", "Aufrufe", "Besucher"]
+clone_verlauf = load("clones_daily.csv", ["repo", "date", "clones", "unique_cloners"])
+verlauf = verlauf.merge(clone_verlauf, on=["repo", "date"], how="outer")
+zahlen = ["views", "unique_visitors", "clones", "unique_cloners"]
+verlauf[zahlen] = verlauf[zahlen].fillna(0).astype(int)
+verlauf = verlauf[(verlauf["views"] > 0) | (verlauf["clones"] > 0)]
+verlauf = verlauf.sort_values(["date", "repo"], ascending=[False, True])
+verlauf.columns = ["Projekt", "Datum", "Aufrufe", "Besucher", "Clones", "Clone-Besucher"]
 
 herkunft = load("referrers.csv", ["repo", "snapshot", "referrer", "views", "unique"])
 herkunft = herkunft[herkunft["snapshot"] == TODAY].drop(columns="snapshot")
