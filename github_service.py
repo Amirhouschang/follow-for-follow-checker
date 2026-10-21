@@ -11,6 +11,7 @@ Start (im Ordner github_traffic):
 import os
 import subprocess
 import sys
+import threading
 from datetime import date
 from pathlib import Path
 
@@ -23,6 +24,7 @@ load_dotenv()
 
 API_KEY = os.getenv("SERVICE_API_KEY")
 LAST_RUN = Path("last_run.txt")  # Datum des letzten erfolgreichen Laufs
+lock = threading.Lock()          # nie zwei Läufe gleichzeitig
 app = FastAPI(title="GitHub Traffic")
 
 
@@ -39,12 +41,17 @@ def health():
 @app.post("/run")
 def run(x_api_key: str = Header(None)):
     auth(x_api_key)
-    today = date.today().isoformat()
-    if LAST_RUN.exists() and LAST_RUN.read_text().strip() == today:
-        return {"status": "heute schon erledigt", "ausgabe": ""}
-    r = subprocess.run([sys.executable, "github_traffic.py"],
-                       capture_output=True, text=True, timeout=300)
-    if r.returncode != 0:
-        raise HTTPException(status_code=500, detail=r.stderr[-1000:])
-    LAST_RUN.write_text(today)
-    return {"status": "fertig", "ausgabe": r.stdout}
+    if not lock.acquire(blocking=False):
+        return {"status": "läuft bereits", "ausgabe": ""}
+    try:
+        today = date.today().isoformat()
+        if LAST_RUN.exists() and LAST_RUN.read_text().strip() == today:
+            return {"status": "heute schon erledigt", "ausgabe": ""}
+        r = subprocess.run([sys.executable, "github_traffic.py"],
+                           capture_output=True, text=True, timeout=300)
+        if r.returncode != 0:
+            raise HTTPException(status_code=500, detail=r.stderr[-1000:])
+        LAST_RUN.write_text(today)
+        return {"status": "fertig", "ausgabe": r.stdout}
+    finally:
+        lock.release()
