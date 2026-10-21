@@ -1,0 +1,11 @@
+   # Geheimnisse
+   .env
+
+   # Laufzeitdateien
+   last_run.txt
+   __pycache__/
+
+   # persönliche Daten (Traffic und Follower)
+   *.csv
+   *.xlsx
+   follower_stand.json
