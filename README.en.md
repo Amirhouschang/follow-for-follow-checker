@@ -2,7 +2,7 @@
 
 [Deutsch](README.md) | **English**
 
-Two small Python scripts for two questions:
+Two small Python scripts for two questions, plus a small service for automation with n8n:
 
 1. Is anyone actually looking at my projects?
 2. Who follows me, and who do I follow one-sidedly?
@@ -49,7 +49,7 @@ But I don't have time for that. I'm not a person who searches for thousands of o
 ## Installation
 
 ```bash
-pip install requests pandas openpyxl
+pip install -r requirements.txt
 ```
 
 Create a personal access token (classic) under
@@ -103,10 +103,10 @@ n8n (Docker, every hour)  >  POST http://172.17.0.1:8766/run  >  github_service.
 
 ### Setup
 
-1. Install the additional packages:
+1. Install the packages (if you haven't already):
 
 ```bash
-pip install fastapi uvicorn python-dotenv
+pip install -r requirements.txt
 ```
 
 2. Create a `.env` in the project folder:

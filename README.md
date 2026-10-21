@@ -2,7 +2,7 @@
 
 **Deutsch** | [English](README.en.md)
 
-Zwei kleine Python-Skripte für zwei Fragen:
+Zwei kleine Python-Skripte für zwei Fragen, dazu ein kleiner Dienst für die Automatisierung mit n8n:
 
 1. Schaut sich überhaupt jemand meine Projekte an?
 2. Wer folgt mir, und wem folge ich nur einseitig?
@@ -47,7 +47,7 @@ Aber dafür habe ich keine Zeit. Ich bin kein Mensch, der tausende andere Mensch
 ## Installation
 
 ```bash
-pip install requests pandas openpyxl
+pip install -r requirements.txt
 ```
 
 Einen Personal Access Token (classic) erstellen unter
@@ -101,10 +101,10 @@ n8n (Docker, jede Stunde)  >  POST http://172.17.0.1:8766/run  >  github_service
 
 ### Einrichten
 
-1. Zusätzliche Pakete installieren:
+1. Pakete installieren (falls noch nicht geschehen):
 
 ```bash
-pip install fastapi uvicorn python-dotenv
+pip install -r requirements.txt
 ```
 
 2. Im Projektordner eine `.env` anlegen:
