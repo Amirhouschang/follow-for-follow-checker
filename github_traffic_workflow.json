@@ -1,0 +1,35 @@
+{
+  "name": "GitHub Traffic – einmal pro Tag",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [ { "field": "hours", "hoursInterval": 1 } ] }
+      },
+      "id": "g1",
+      "name": "Jede Stunde",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://172.17.0.1:8766/run",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": { "timeout": 300000 }
+      },
+      "id": "g2",
+      "name": "GitHub Traffic holen",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [220, 0]
+    }
+  ],
+  "connections": {
+    "Jede Stunde": {
+      "main": [[{ "node": "GitHub Traffic holen", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Berlin" }
+}

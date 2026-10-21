@@ -17,7 +17,7 @@ I have also applied to a few places and linked some projects in my CV for every 
 
 All of this was very new to me. Before, I only knew GitHub from documentation that I use now and then for my own private stuff. Since I posted a few repos, these followers keep coming. I myself have hardly followed anyone on my own. People followed me first, and then I followed them back. Like a naive person, I looked at their profiles and their repos too, maybe not all of them, but quite a few. My LinkedIn is also super new, because as an autistic person I didn't have social networks. I'm not particularly good at it either, and the whole thing wasn't really funny.
 
-Then I did a bit of research and discovered Follow for Follow. I just thought: Wow, how stupid is this whole thing, and what nonsense is all of it. Then I thought: Okay, if that's how it is, I'll leave it be, even though I don't understand at all what it's about and why. Whether you get seen or not is totally uninteresting to me. Still, I thought: If Follow for Follow exists anyway, I at least want to know who follows me and who unfollows me afterwards. If you're reading this, you're definitely not part of that group, so don't take it personally! But I still love them, even though I don't understand them. 😅
+Then I did a bit of research and discovered Follow for Follow. I just thought: Wow, how stupid is this whole thing, and what nonsense is all of it. Then I thought: Okay, if that's how it is, I'll leave it be, even though I don't understand at all what it's about and why. Whether you get seen or not is totally uninteresting to me. Still, I thought: If Follow for Follow exists anyway, I at least want to know who follows me and who unfollows me afterwards. If you're reading this, you're definitely not part of that group, so don't take it personally! But I still love them, even though I don't understand them. Hahaha
 
 But I don't have time for that. I'm not a person who searches for thousands of other people, follows them and unfollows them again. That's why this Python script. I'm currently automating my whole life, this is part of it and it's more fun for me.
 
@@ -81,8 +81,72 @@ python github_unfollow.py
 python github_unfollow.py --apply
 ```
 
+## Automation with n8n
+
+I run the traffic report automatically once a day, as soon as my laptop is on. n8n runs in Docker and can't start Python on the laptop directly. So n8n calls a small local service that starts the script.
+
+```
+n8n (Docker, every hour)  >  POST http://172.17.0.1:8766/run  >  github_service.py  >  github_traffic.py
+```
+
+- **n8n** asks the local service every hour
+- **`github_service.py`** (FastAPI) only starts `github_traffic.py` if it hasn't run today yet. The date is stored in `last_run.txt`
+- **systemd** starts the service automatically at login
+
+### Files
+
+| File | Purpose |
+|---|---|
+| `github_service.py` | local service for n8n (port 8766) |
+| `github_traffic_workflow.json` | n8n workflow to import |
+| `.env` | `GITHUB_TOKEN` and `SERVICE_API_KEY` (does not belong in the repo) |
+
+### Setup
+
+1. Install the additional packages:
+
+```bash
+pip install fastapi uvicorn python-dotenv
+```
+
+2. Create a `.env` in the project folder:
+
+```
+GITHUB_TOKEN=your_token
+SERVICE_API_KEY=your_own_secret_key
+```
+
+3. Create the systemd service at `~/.config/systemd/user/github-traffic.service` (adjust the paths):
+
+```ini
+[Unit]
+Description=GitHub Traffic service for n8n (port 8766)
+After=network-online.target
+
+[Service]
+WorkingDirectory=/home/<user>/Documents/github_traffic
+ExecStart=/home/<user>/miniconda3/envs/<env>/bin/uvicorn github_service:app --host 172.17.0.1 --port 8766
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
+```
+
+4. Enable the service:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user enable --now github-traffic.service
+systemctl --user status github-traffic.service
+```
+
+5. In n8n, import `github_traffic_workflow.json`, select a Header Auth credential with name `X-API-Key` and the value of `SERVICE_API_KEY` in the HTTP node, and activate the workflow.
+
+**Important:** Add `.env` and `last_run.txt` to your `.gitignore` so your token never ends up on GitHub.
+
 ## Good to know
 
 - Run the traffic script at least every 14 days, otherwise data gets lost.
-- You can also automate this very easily with self-hosted n8n, so you don't have to run the scripts yourself regularly.
+- With the n8n automation (see above) you no longer have to start the traffic script yourself. `github_unfollow.py` is still run by hand.
 - GitHub doesn't like mass automated unfollowing. That's why the script waits one second between each action.
